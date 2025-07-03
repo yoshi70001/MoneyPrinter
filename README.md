@@ -1,7 +1,6 @@
 # MoneyPrinter 💸
 
-> ♥︎ If you're interested in using the newer, better version, sign up at [shiori.ai](https://www.shiori.ai), an AI tool that combines all other AI tools into one. Use code `MONEYPRINTER` for 20% off 🫶.
-
+> ♥︎ Sponsor: The Best AI Chat App: [shiori.ai](https://www.shiori.ai)
 ---
 
 > 𝕏 Also, follow me on X: [@DevBySami](https://x.com/DevBySami).
