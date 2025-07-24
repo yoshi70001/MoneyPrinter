@@ -13,13 +13,16 @@ from datetime import timedelta
 # pyrefly: ignore  # missing-module-attribute
 from moviepy.video.fx.all import crop
 from moviepy.video.tools.subtitles import SubtitlesClip
+# pyrefly: ignore  # import-error
+from utils import get_project_root
 
-load_dotenv("../.env")
+load_dotenv(os.path.join(get_project_root(), ".env"))
+
 
 ASSEMBLY_AI_API_KEY = os.getenv("ASSEMBLY_AI_API_KEY")
 
 
-def save_video(video_url: str, directory: str = "../temp") -> str:
+def save_video(video_url: str, directory: str) -> str:
     """
     Saves a video from a given URL and returns the path to the video.
 
@@ -31,7 +34,7 @@ def save_video(video_url: str, directory: str = "../temp") -> str:
         str: The path to the saved video.
     """
     video_id = uuid.uuid4()
-    video_path = f"{directory}/{video_id}.mp4"
+    video_path = os.path.join(directory, f"{video_id}.mp4")
     with open(video_path, "wb") as f:
         f.write(requests.get(video_url).content)
 
@@ -81,7 +84,7 @@ def __generate_subtitles_locally(sentences: List[str], audio_clips: List[AudioFi
         str: The generated subtitles
     """
 
-    def convert_to_srt_time_format(total_seconds):
+    def convert_to_srt_time_format(total_seconds: int) -> str:
         # Convert total seconds to the SRT time format: HH:MM:SS,mmm
         if total_seconds == 0:
             return "0:00:00,0"
@@ -105,7 +108,7 @@ def __generate_subtitles_locally(sentences: List[str], audio_clips: List[AudioFi
     return "\n".join(subtitles)
 
 
-def generate_subtitles(audio_path: str, sentences: List[str], audio_clips: List[AudioFileClip], voice: str) -> str:
+def generate_subtitles(audio_path: str, sentences: List[str], audio_clips: List[AudioFileClip], voice: str, subtitles_dir: str) -> str:
     """
     Generates subtitles from a given audio file and returns the path to the subtitles.
 
@@ -113,6 +116,7 @@ def generate_subtitles(audio_path: str, sentences: List[str], audio_clips: List[
         audio_path (str): The path to the audio file to generate subtitles from.
         sentences (List[str]): all the sentences said out loud in the audio clips
         audio_clips (List[AudioFileClip]): all the individual audio clips which will make up the final audio track
+        subtitles_dir (str): The directory to save the subtitles to.
 
     Returns:
         str: The path to the generated subtitles.
@@ -123,7 +127,7 @@ def generate_subtitles(audio_path: str, sentences: List[str], audio_clips: List[
         srt_equalizer.equalize_srt_file(srt_path, srt_path, max_chars)
 
     # Save subtitles
-    subtitles_path = f"../subtitles/{uuid.uuid4()}.srt"
+    subtitles_path = os.path.join(subtitles_dir, f"{uuid.uuid4()}.srt")
 
     if ASSEMBLY_AI_API_KEY is not None and ASSEMBLY_AI_API_KEY != "":
         print(colored("[+] Creating subtitles using AssemblyAI", "blue"))
@@ -146,7 +150,7 @@ def generate_subtitles(audio_path: str, sentences: List[str], audio_clips: List[
     return subtitles_path
 
 
-def combine_videos(video_paths: List[str], max_duration: int, max_clip_duration: int, threads: int) -> str:
+def combine_videos(video_paths: List[str], max_duration: int, max_clip_duration: int, threads: int, temp_dir: str) -> str:
     """
     Combines a list of videos into one video and returns the path to the combined video.
 
@@ -155,12 +159,13 @@ def combine_videos(video_paths: List[str], max_duration: int, max_clip_duration:
         max_duration (int): The maximum duration of the combined video.
         max_clip_duration (int): The maximum duration of each clip.
         threads (int): The number of threads to use for the video processing.
+        temp_dir (str): The path to the temporary directory.
 
     Returns:
         str: The path to the combined video.
     """
     video_id = uuid.uuid4()
-    combined_video_path = f"../temp/{video_id}.mp4"
+    combined_video_path = os.path.join(temp_dir, f"{video_id}.mp4")
     
     # Required duration of each clip
     req_dur = max_duration / len(video_paths)
@@ -208,7 +213,7 @@ def combine_videos(video_paths: List[str], max_duration: int, max_clip_duration:
     return combined_video_path
 
 
-def generate_video(combined_video_path: str, tts_path: str, subtitles_path: str, threads: int, subtitles_position: str,  text_color : str) -> str:
+def generate_video(combined_video_path: str, tts_path: str, subtitles_path: str, threads: int, subtitles_position: str,  text_color : str, temp_dir: str, output_dir: str) -> str:
     """
     This function creates the final video, with subtitles and audio.
 
@@ -218,35 +223,38 @@ def generate_video(combined_video_path: str, tts_path: str, subtitles_path: str,
         subtitles_path (str): The path to the subtitles.
         threads (int): The number of threads to use for the video processing.
         subtitles_position (str): The position of the subtitles.
+        temp_dir (str): The path to the temporary directory.
+        output_dir (str): The path to the output directory.
 
     Returns:
         str: The path to the final video.
     """
-    # Make a generator that returns a TextClip when called with consecutive
-    generator = lambda txt: TextClip(
-        txt,
-        font="../fonts/bold_font.ttf",
-        fontsize=100,
-        color=text_color,
-        stroke_color="black",
-        stroke_width=5,
-    )
+    video_clip = VideoFileClip(combined_video_path)
+    clips_to_compose = [video_clip]
 
-    # Split the subtitles position into horizontal and vertical
-    horizontal_subtitles_position, vertical_subtitles_position = subtitles_position.split(",")
-
-    # Burn the subtitles into the video
-    subtitles = SubtitlesClip(subtitles_path, generator)
-    result = CompositeVideoClip([
-        VideoFileClip(combined_video_path),
+    if subtitles_path and os.path.exists(subtitles_path):
+        generator = lambda txt: TextClip(
+            txt,
+            font=os.path.join(get_project_root(), "fonts", "bold_font.ttf"),
+            fontsize=100,
+            color=text_color,
+            stroke_color="black",
+            stroke_width=5,
+        )
+        
+        horizontal_subtitles_position, vertical_subtitles_position = subtitles_position.split(",")
+        
+        subtitles = SubtitlesClip(subtitles_path, generator)
         # pyrefly: ignore  # missing-attribute
-        subtitles.set_pos((horizontal_subtitles_position, vertical_subtitles_position))
-    ])
+        subtitles_positioned = subtitles.set_pos((horizontal_subtitles_position, vertical_subtitles_position))
+        clips_to_compose.append(subtitles_positioned)
 
-    # Add the audio
+    result = CompositeVideoClip(clips_to_compose)
+    
     audio = AudioFileClip(tts_path)
     result = result.set_audio(audio)
 
-    result.write_videofile("../temp/output.mp4", threads=threads or 2)
+    output_path = os.path.join(temp_dir, "output.mp4")
+    result.write_videofile(output_path, threads=threads or 2)
 
     return "output.mp4"

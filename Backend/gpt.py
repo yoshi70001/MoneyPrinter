@@ -58,7 +58,7 @@ def generate_response(prompt: str, ai_model: str) -> str:
 
         ).choices[0].message.content
     elif ai_model == 'gemmini':
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-2.5-pro')
         response_model = model.generate_content(prompt)
         response = response_model.text
 
@@ -206,7 +206,8 @@ def get_search_terms(video_subject: str, amount: int, script: str, ai_model: str
     search_terms = []
     
     try:
-        search_terms = json.loads(response)
+        responceCleared = response.removeprefix("```json").removesuffix("```").strip()
+        search_terms = json.loads(responceCleared)
         if not isinstance(search_terms, list) or not all(isinstance(term, str) for term in search_terms):
             raise ValueError("Response is not a list of strings.")
 

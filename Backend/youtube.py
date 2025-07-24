@@ -33,7 +33,7 @@ RETRIABLE_STATUS_CODES = [500, 502, 503, 504]
 # The CLIENT_SECRETS_FILE variable specifies the name of a file that contains
 # the OAuth 2.0 information for this application, including its client_id and
 # client_secret.
-CLIENT_SECRETS_FILE = "./client_secret.json"
+CLIENT_SECRETS_FILE = os.path.join(os.path.dirname(__file__), "client_secret.json")
 
 # This OAuth 2.0 access scope allows an application to upload files to the
 # authenticated user's YouTube channel, but doesn't allow other types of access.

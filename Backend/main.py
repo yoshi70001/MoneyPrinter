@@ -3,15 +3,28 @@ import os
 from utils import *
 from dotenv import load_dotenv
 
+# --- Project Paths ---
+ROOT_DIR = get_project_root()
+TEMP_DIR = os.path.join(ROOT_DIR, "temp")
+SUBTITLES_DIR = os.path.join(ROOT_DIR, "subtitles")
+SONGS_DIR = os.path.join(ROOT_DIR, "Songs")
+OUTPUT_DIR = ROOT_DIR
+
+# Ensure necessary directories exist
+ensure_dir_exists(TEMP_DIR)
+ensure_dir_exists(SUBTITLES_DIR)
+ensure_dir_exists(SONGS_DIR)
+ensure_dir_exists(OUTPUT_DIR)
+
+
 # Load environment variables
-load_dotenv("../.env")
+load_dotenv(os.path.join(ROOT_DIR, ".env"))
 # Check if all required environment variables are set
 # This must happen before importing video which uses API keys without checking
-# pyrefly: ignore  # unknown-name
 check_env_vars()
 
 # pyrefly: ignore  # import-error
-from gemini import *
+from gpt import *
 # pyrefly: ignore  # import-error
 from video import *
 # pyrefly: ignore  # import-error
@@ -55,10 +68,8 @@ def generate():
         GENERATING = True
 
         # Clean
-        # pyrefly: ignore  # unknown-name
-        clean_dir("../temp/")
-        # pyrefly: ignore  # unknown-name
-        clean_dir("../subtitles/")
+        clean_dir(TEMP_DIR)
+        clean_dir(SUBTITLES_DIR)
 
 
         # Parse JSON
@@ -82,12 +93,10 @@ def generate():
         if use_music:
             # Downloads a ZIP file containing popular TikTok Songs
             if songs_zip_url:
-                # pyrefly: ignore  # unknown-name
-                fetch_songs(songs_zip_url)
+                fetch_songs(songs_zip_url, SONGS_DIR)
             else:
                 # Default to a ZIP file containing popular TikTok Songs
-                # pyrefly: ignore  # unknown-name
-                fetch_songs("https://filebin.net/2avx134kdibc4c3q/drive-download-20240209T180019Z-001.zip")
+                fetch_songs("https://filebin.net/2avx134kdibc4c3q/drive-download-20240209T180019Z-001.zip", SONGS_DIR)
 
         # Print little information about the video which is to be generated
         print(colored("[Video to be generated]", "blue"))
@@ -148,7 +157,7 @@ def generate():
                 )
             # pyrefly: ignore  # unknown-name
             found_urls = search_for_stock_videos(
-                search_term, os.getenv("PEXELS_API_KEY"), it, min_dur
+                search_term, os.getenv("PEXELS_API_KEY"), os.getenv("PIXABAY_API_KEY"), it, min_dur
             )
             # Check for duplicates
             for url in found_urls:
@@ -184,8 +193,7 @@ def generate():
                     }
                 )
             try:
-                # pyrefly: ignore  # unknown-name
-                saved_video_path = save_video(video_url)
+                saved_video_path = save_video(video_url, TEMP_DIR)
                 video_paths.append(saved_video_path)
             except Exception:
                 print(colored(f"[-] Could not download video: {video_url}", "red"))
@@ -222,7 +230,7 @@ def generate():
                         "data": [],
                     }
                 )
-            current_tts_path = f"../temp/{uuid4()}.mp3"
+            current_tts_path = os.path.join(TEMP_DIR, f"{uuid4()}.mp3")
             # pyrefly: ignore  # unknown-name
             tts(sentence, voice, filename=current_tts_path)
             # pyrefly: ignore  # unknown-name
@@ -232,26 +240,22 @@ def generate():
         # Combine all TTS files using moviepy
         # pyrefly: ignore  # unknown-name
         final_audio = concatenate_audioclips(paths)
-        tts_path = f"../temp/{uuid4()}.mp3"
+        tts_path = os.path.join(TEMP_DIR, f"{uuid4()}.mp3")
         final_audio.write_audiofile(tts_path)
 
         try:
-            # pyrefly: ignore  # unknown-name
-            subtitles_path = generate_subtitles(audio_path=tts_path, sentences=sentences, audio_clips=paths, voice=voice_prefix)
+            subtitles_path = generate_subtitles(audio_path=tts_path, sentences=sentences, audio_clips=paths, voice=voice_prefix, subtitles_dir=SUBTITLES_DIR)
         except Exception as e:
             print(colored(f"[-] Error generating subtitles: {e}", "red"))
             subtitles_path = None
 
         # Concatenate videos
-        # pyrefly: ignore  # unknown-name
         temp_audio = AudioFileClip(tts_path)
-        # pyrefly: ignore  # unknown-name
-        combined_video_path = combine_videos(video_paths, temp_audio.duration, 5, n_threads or 2)
+        combined_video_path = combine_videos(video_paths, temp_audio.duration, 5, n_threads or 2, TEMP_DIR)
 
         # Put everything together
         try:
-            # pyrefly: ignore  # unknown-name
-            final_video_path = generate_video(combined_video_path, tts_path, subtitles_path, n_threads or 2, subtitles_position, text_color or "#FFFF00")
+            final_video_path = generate_video(combined_video_path, tts_path, subtitles_path, n_threads or 2, subtitles_position, text_color or "#FFFF00", TEMP_DIR, OUTPUT_DIR)
         except Exception as e:
             print(colored(f"[-] Error generating final video: {e}", "red"))
             final_video_path = None
@@ -307,12 +311,10 @@ def generate():
                 except HttpError as e:
                     print(f"An HTTP error {e.resp.status} occurred:\n{e.content}")
 
-        # pyrefly: ignore  # unknown-name
-        video_clip = VideoFileClip(f"../temp/{final_video_path}")
+        video_clip = VideoFileClip(os.path.join(TEMP_DIR, final_video_path))
         if use_music:
             # Select a random song
-            # pyrefly: ignore  # unknown-name
-            song_path = choose_random_song()
+            song_path = choose_random_song(SONGS_DIR)
 
             # Add song to video at 30% volume using moviepy
             original_duration = video_clip.duration
