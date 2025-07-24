@@ -77,6 +77,7 @@ def fetch_songs(zip_url: str) -> None:
     except Exception as e:
         logger.error(colored(f"Error occurred while fetching songs: {str(e)}", "red"))
 
+# pyrefly: ignore  # bad-return
 def choose_random_song() -> str:
     """
     Chooses a random song from the songs/ directory.
@@ -105,6 +106,7 @@ def check_env_vars() -> None:
     """
     try:
         required_vars = ["PEXELS_API_KEY", "TIKTOK_SESSION_ID", "IMAGEMAGICK_BINARY"]
+        # pyrefly: ignore  # unsupported-operation, bad-argument-type
         missing_vars = [var + os.getenv(var)  for var in required_vars if os.getenv(var) is None or (len(os.getenv(var)) == 0)]  
 
         if missing_vars:

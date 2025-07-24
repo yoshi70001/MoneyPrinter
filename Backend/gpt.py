@@ -40,6 +40,7 @@ def generate_response(prompt: str, ai_model: str) -> str:
         client = Client()
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
+            # pyrefly: ignore  # implicit-import
             provider=g4f.Provider.You, 
             messages=[{"role": "user", "content": prompt}],
         ).choices[0].message.content
@@ -48,6 +49,7 @@ def generate_response(prompt: str, ai_model: str) -> str:
 
         model_name = "gpt-3.5-turbo" if ai_model == "gpt3.5-turbo" else "gpt-4-1106-preview"
 
+        # pyrefly: ignore  # no-matching-overload
         response = openai.chat.completions.create(
 
             model=model_name,
@@ -153,6 +155,7 @@ def generate_script(video_subject: str, paragraph_number: int, ai_model: str, vo
         return final_script
     else:
         print(colored("[-] GPT returned an empty response.", "red"))
+        # pyrefly: ignore  # bad-return
         return None
 
 
@@ -215,6 +218,7 @@ def get_search_terms(video_subject: str, amount: int, script: str, ai_model: str
 
         # Attempt to extract list-like string and convert to list
         match = re.search(r'\["(?:[^"\\]|\\.)*"(?:,\s*"[^"\\]*")*\]', response)
+        # pyrefly: ignore  # missing-attribute
         print(match.group())
         if match:
             try:

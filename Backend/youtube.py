@@ -6,14 +6,18 @@ import httplib2
 
 from termcolor import colored
 from oauth2client.file import Storage
+# pyrefly: ignore  # import-error
 from apiclient.discovery import build
+# pyrefly: ignore  # import-error
 from apiclient.errors import HttpError
+# pyrefly: ignore  # import-error
 from apiclient.http import MediaFileUpload
 from oauth2client.tools import argparser, run_flow
 from oauth2client.client import flow_from_clientsecrets
 
 # Explicitly tell the underlying HTTP transport library not to retry, since
 # we are handling retry logic ourselves.
+# pyrefly: ignore  # bad-assignment
 httplib2.RETRIES = 1
 
 # Maximum number of times to retry before giving up.
@@ -75,12 +79,14 @@ def get_authenticated_service():
     credentials = storage.get()
 
     if credentials is None or credentials.invalid:
+        # pyrefly: ignore  # missing-attribute
         flags = argparser.parse_args()
         credentials = run_flow(flow, storage, flags)
 
     return build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
                  http=credentials.authorize(httplib2.Http()))
 
+# pyrefly: ignore  # not-a-type
 def initialize_upload(youtube: any, options: dict):
     """
     This method uploads a video to YouTube.
@@ -134,6 +140,7 @@ def resumable_upload(insert_request: MediaFileUpload):
     response = None
     error = None
     retry = 0
+    # pyrefly: ignore  # bad-assignment
     while response is None:
         try:
             print(colored(" => Uploading file...", "magenta"))

@@ -1,4 +1,5 @@
 import os
+# pyrefly: ignore  # import-error
 from utils import *
 from dotenv import load_dotenv
 
@@ -6,16 +7,23 @@ from dotenv import load_dotenv
 load_dotenv("../.env")
 # Check if all required environment variables are set
 # This must happen before importing video which uses API keys without checking
+# pyrefly: ignore  # unknown-name
 check_env_vars()
 
-from gpt import *
+# pyrefly: ignore  # import-error
+from gemini import *
+# pyrefly: ignore  # import-error
 from video import *
+# pyrefly: ignore  # import-error
 from search import *
 from uuid import uuid4
+# pyrefly: ignore  # import-error
 from tiktokvoice import *
 from flask_cors import CORS
 from termcolor import colored
+# pyrefly: ignore  # import-error
 from youtube import upload_video
+# pyrefly: ignore  # import-error
 from apiclient.errors import HttpError
 from flask import Flask, request, jsonify
 from moviepy.config import change_settings
@@ -47,7 +55,9 @@ def generate():
         GENERATING = True
 
         # Clean
+        # pyrefly: ignore  # unknown-name
         clean_dir("../temp/")
+        # pyrefly: ignore  # unknown-name
         clean_dir("../subtitles/")
 
 
@@ -72,9 +82,11 @@ def generate():
         if use_music:
             # Downloads a ZIP file containing popular TikTok Songs
             if songs_zip_url:
+                # pyrefly: ignore  # unknown-name
                 fetch_songs(songs_zip_url)
             else:
                 # Default to a ZIP file containing popular TikTok Songs
+                # pyrefly: ignore  # unknown-name
                 fetch_songs("https://filebin.net/2avx134kdibc4c3q/drive-download-20240209T180019Z-001.zip")
 
         # Print little information about the video which is to be generated
@@ -105,9 +117,11 @@ def generate():
 
 
         # Generate a script
+        # pyrefly: ignore  # unknown-name
         script = generate_script(data["videoSubject"], paragraph_number, ai_model, voice, data["customPrompt"])  # Pass the AI model to the script generation
 
         # Generate search terms
+        # pyrefly: ignore  # unknown-name
         search_terms = get_search_terms(
             data["videoSubject"], AMOUNT_OF_STOCK_VIDEOS, script, ai_model
         )
@@ -132,6 +146,7 @@ def generate():
                         "data": [],
                     }
                 )
+            # pyrefly: ignore  # unknown-name
             found_urls = search_for_stock_videos(
                 search_term, os.getenv("PEXELS_API_KEY"), it, min_dur
             )
@@ -169,6 +184,7 @@ def generate():
                     }
                 )
             try:
+                # pyrefly: ignore  # unknown-name
                 saved_video_path = save_video(video_url)
                 video_paths.append(saved_video_path)
             except Exception:
@@ -207,33 +223,41 @@ def generate():
                     }
                 )
             current_tts_path = f"../temp/{uuid4()}.mp3"
+            # pyrefly: ignore  # unknown-name
             tts(sentence, voice, filename=current_tts_path)
+            # pyrefly: ignore  # unknown-name
             audio_clip = AudioFileClip(current_tts_path)
             paths.append(audio_clip)
 
         # Combine all TTS files using moviepy
+        # pyrefly: ignore  # unknown-name
         final_audio = concatenate_audioclips(paths)
         tts_path = f"../temp/{uuid4()}.mp3"
         final_audio.write_audiofile(tts_path)
 
         try:
+            # pyrefly: ignore  # unknown-name
             subtitles_path = generate_subtitles(audio_path=tts_path, sentences=sentences, audio_clips=paths, voice=voice_prefix)
         except Exception as e:
             print(colored(f"[-] Error generating subtitles: {e}", "red"))
             subtitles_path = None
 
         # Concatenate videos
+        # pyrefly: ignore  # unknown-name
         temp_audio = AudioFileClip(tts_path)
+        # pyrefly: ignore  # unknown-name
         combined_video_path = combine_videos(video_paths, temp_audio.duration, 5, n_threads or 2)
 
         # Put everything together
         try:
+            # pyrefly: ignore  # unknown-name
             final_video_path = generate_video(combined_video_path, tts_path, subtitles_path, n_threads or 2, subtitles_position, text_color or "#FFFF00")
         except Exception as e:
             print(colored(f"[-] Error generating final video: {e}", "red"))
             final_video_path = None
 
         # Define metadata for the video, we will display this to the user, and use it for the YouTube upload
+        # pyrefly: ignore  # unknown-name
         title, description, keywords = generate_metadata(data["videoSubject"], script, ai_model)
 
         print(colored("[-] Metadata for YouTube upload:", "blue"))
@@ -283,20 +307,24 @@ def generate():
                 except HttpError as e:
                     print(f"An HTTP error {e.resp.status} occurred:\n{e.content}")
 
+        # pyrefly: ignore  # unknown-name
         video_clip = VideoFileClip(f"../temp/{final_video_path}")
         if use_music:
             # Select a random song
+            # pyrefly: ignore  # unknown-name
             song_path = choose_random_song()
 
             # Add song to video at 30% volume using moviepy
             original_duration = video_clip.duration
             original_audio = video_clip.audio
+            # pyrefly: ignore  # unknown-name
             song_clip = AudioFileClip(song_path).set_fps(44100)
 
             # Set the volume of the song to 10% of the original volume
             song_clip = song_clip.volumex(0.1).set_fps(44100)
 
             # Add the song to the video
+            # pyrefly: ignore  # unknown-name
             comp_audio = CompositeAudioClip([original_audio, song_clip])
             video_clip = video_clip.set_audio(comp_audio)
             video_clip = video_clip.set_fps(30)

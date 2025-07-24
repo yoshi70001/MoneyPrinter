@@ -10,6 +10,7 @@ from moviepy.editor import *
 from termcolor import colored
 from dotenv import load_dotenv
 from datetime import timedelta
+# pyrefly: ignore  # missing-module-attribute
 from moviepy.video.fx.all import crop
 from moviepy.video.tools.subtitles import SubtitlesClip
 
@@ -91,12 +92,14 @@ def __generate_subtitles_locally(sentences: List[str], audio_clips: List[AudioFi
 
     for i, (sentence, audio_clip) in enumerate(zip(sentences, audio_clips), start=1):
         duration = audio_clip.duration
+        # pyrefly: ignore  # unsupported-operation
         end_time = start_time + duration
 
         # Format: subtitle index, start time --> end time, sentence
         subtitle_entry = f"{i}\n{convert_to_srt_time_format(start_time)} --> {convert_to_srt_time_format(end_time)}\n{sentence}\n"
         subtitles.append(subtitle_entry)
 
+        # pyrefly: ignore  # unsupported-operation
         start_time += duration  # Update start time for the next subtitle
 
     return "\n".join(subtitles)
@@ -236,6 +239,7 @@ def generate_video(combined_video_path: str, tts_path: str, subtitles_path: str,
     subtitles = SubtitlesClip(subtitles_path, generator)
     result = CompositeVideoClip([
         VideoFileClip(combined_video_path),
+        # pyrefly: ignore  # missing-attribute
         subtitles.set_pos((horizontal_subtitles_position, vertical_subtitles_position))
     ])
 

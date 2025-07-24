@@ -180,6 +180,7 @@ def tts(
                     print(colored("[-] This voice is unavailable right now", "red"))
                     return "error"
 
+                # pyrefly: ignore  # unsupported-operation
                 audio_base64_data[index] = base64_data
 
             threads = []
@@ -196,11 +197,13 @@ def tts(
                 thread.join()
 
             # Concatenate the base64 data in the correct order
+            # pyrefly: ignore  # no-matching-overload
             audio_base64_data = "".join(audio_base64_data)
 
         save_audio_file(audio_base64_data, filename)
         print(colored(f"[+] Audio file saved successfully as '{filename}'", "green"))
         if play_sound:
+            # pyrefly: ignore  # missing-argument
             playsound(filename)
 
     except Exception as e:
