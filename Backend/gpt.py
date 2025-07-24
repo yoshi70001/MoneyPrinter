@@ -140,8 +140,8 @@ def generate_script(video_subject: str, paragraph_number: int, ai_model: str, vo
         response = re.sub(r"\[.*\]", "", response)
         response = re.sub(r"\(.*\)", "", response)
 
-        # Split the script into paragraphs
-        paragraphs = response.split("\n\n")
+        # Split the script into paragraphs and filter out titles (lines without punctuation)
+        paragraphs = [p.strip() for p in response.split("\n\n") if p.strip() and any(c in p for c in '.!?')]
 
         # Select the specified number of paragraphs
         selected_paragraphs = paragraphs[:paragraph_number]
@@ -270,4 +270,4 @@ def generate_metadata(video_subject: str, script: str, ai_model: str) -> Tuple[s
     # Generate keywords  
     keywords = get_search_terms(video_subject, 6, script, ai_model)  
 
-    return title, description, keywords  
+    return title, description, keywords
